@@ -1,5 +1,6 @@
 import numpy as np
 from math import floor, ceil
+from probability import *
 
 # Interval [0,1] simulation using integers
 precision = 60
@@ -8,29 +9,41 @@ half = one >> 1
 quarter = half >> 1
 threequarters = quarter*3
 
-def arith_encode(source, prob, cond_len=0, alphabet=[chr(x) for x in xrange(256)]):
-
-    # Initialisation
+def arith_encode(source, key_len=0, dynamic=False, alphabet=[chr(x) for x in xrange(256)]):
     code_list = []
     lo = 0
     hi = one
     straddle = 0
 
+    # Initialise histogram
+    if dynamic:
+        hist = {}
+    else:
+        hist = hist_static_init(source, key_len)
+
     # MAIN ENCODING ROUTINE
     for k, ch in enumerate(source):
+
         hl_diff = hi - lo + 1     # range of the interval (+1 to avoid rounding issues)
         ind = alphabet.index(ch)  # index of the current symbol
+        key = source[max(0,k-key_len):k]
+        if dynamic:
+            hist_dynamic_check(hist, key, bias=1)
 
-        # Calculate CDF (excluding the probability at each index itself)
-        cond = source[max(0,k-cond_len):k]
-        cprob = np.cumsum(prob[cond]) - prob[cond]
+        # Get probability and CDF
+        prob = hist_to_prob(hist, key)
+        cprob = np.cumsum(prob) - prob
 
         # update the boundaries
         lo += int(ceil(hl_diff * cprob[ind]))
-        hi = lo + int(floor(hl_diff * prob[cond][ind]))
+        hi = lo + int(floor(hl_diff * prob[ind]))
+
+        # update the histogram if the mode is dynamic
+        if dynamic:
+            hist_dynamic_update(hist, key, ch, key_len)
 
         # check that the interval has not narrowed to 0
-        assert hi > lo, 'Error: interval has become zero. Check for zero probabilities and precision issues'
+        assert hi > lo, 'Error: interval has become zero. lo = %d, hi = %d' % (lo, hi)
 
         # RESCALING LOOP
         while True:
@@ -75,8 +88,7 @@ def arith_encode(source, prob, cond_len=0, alphabet=[chr(x) for x in xrange(256)
     return code
 
 
-def arith_decode(code, prob, source_len, cond_len=0, alphabet=[chr(x) for x in xrange(256)]):
-    # Initialisation
+def arith_decode(code, source_len, key_len=0, dynamic=False, hist=None, alphabet=[chr(x) for x in xrange(256)]):
     source_list = []
     lo = 0
     hi = one
@@ -87,21 +99,35 @@ def arith_decode(code, prob, source_len, cond_len=0, alphabet=[chr(x) for x in x
     tail_ptr = precision
     target = int(code[0:precision], 2)
 
+    # Initialise histogram
+    if dynamic:
+        hist = {}
+    else:
+        assert hist is not None, 'Function in static mode, but no histogram is provided'
+
     # MAIN ENCODING ROUTINE
     for k in xrange(source_len):
         hl_diff = hi - lo + 1     # range of the interval (+1 to avoid rounding issues)
+        key = ''.join(source_list[max(0,k-key_len):k])
+        if dynamic:
+            hist_dynamic_check(hist, key, bias=1)
 
-        # Calculate CDF (excluding the probability at each index itself)
-        cond = ''.join(source_list[max(0,k-cond_len):k])
-        cprob = np.cumsum(prob[cond]) - prob[cond]
+        # Get probability and CDF
+        prob = hist_to_prob(hist, key)
+        cprob = np.cumsum(prob) - prob
 
         # Now find the index of the symbol
         ind = np.max(np.nonzero((lo + np.ceil(hl_diff * cprob).astype('int')) <= target))
-        source_list.append(alphabet[ind])
+        ch = alphabet[ind]
+        source_list.append(ch)
 
         # update the boundaries
         lo += int(ceil(hl_diff * cprob[ind]))
-        hi = lo + int(floor(hl_diff * prob[cond][ind]))
+        hi = lo + int(floor(hl_diff * prob[ind]))
+
+        # update the histogram if the mode is dynamic
+        if dynamic:
+            hist_dynamic_update(hist, key, ch, key_len)
 
         # check that the interval has not narrowed to 0
         assert hi > lo, 'Error: interval has become zero. Check for zero probabilities and precision issues'
