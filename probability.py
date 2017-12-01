@@ -2,7 +2,7 @@ import numpy as np
 from math import sqrt, log
 
 def hist_static_init(source, key_len=0):
-    keys_list = [source[max(0,k-key_len):k] for k in xrange(len(source))]
+    keys_list = [source[max(0,k-key_len):k] for k in range(len(source))]
     hist = dict((key, np.zeros([256])) for key in keys_list)
 
     # Histogramming data

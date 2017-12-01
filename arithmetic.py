@@ -9,7 +9,7 @@ half = one >> 1
 quarter = half >> 1
 threequarters = quarter*3
 
-def arith_encode(source, key_len=0, dynamic=False, alphabet=[chr(x) for x in xrange(256)]):
+def arith_encode(source, key_len=0, dynamic=False, alphabet=[chr(x) for x in range(256)]):
     code_list = []
     lo = 0
     hi = one
@@ -49,12 +49,12 @@ def arith_encode(source, key_len=0, dynamic=False, alphabet=[chr(x) for x in xra
         while True:
             if hi < half:
                 code_list.append('0')
-                for i in xrange(straddle):
+                for i in range(straddle):
                     code_list.append('1')
                 straddle = 0
             elif lo >= half:
                 code_list.append('1')
-                for i in xrange(straddle):
+                for i in range(straddle):
                     code_list.append('0')
                 straddle = 0
                 # take a half away
@@ -76,19 +76,19 @@ def arith_encode(source, key_len=0, dynamic=False, alphabet=[chr(x) for x in xra
     straddle += 1     # zoom in again around 0.5
     if lo < quarter:  # LHS of 0.5
         code_list.append('0')
-        for i in xrange(straddle):
+        for i in range(straddle):
             code_list.append('1')
     else:             # RHS of 0.5
         code_list.append('1')
-        for i in xrange(straddle):
+        for i in range(straddle):
             code_list.append('0')
 
     # Return the final string of code
     code = ''.join(code_list)
-    return code
+    return code, hist
 
 
-def arith_decode(code, source_len, key_len=0, dynamic=False, hist=None, alphabet=[chr(x) for x in xrange(256)]):
+def arith_decode(code, source_len, key_len=0, dynamic=False, hist=None, alphabet=[chr(x) for x in range(256)]):
     source_list = []
     lo = 0
     hi = one
@@ -106,7 +106,7 @@ def arith_decode(code, source_len, key_len=0, dynamic=False, hist=None, alphabet
         assert hist is not None, 'Function in static mode, but no histogram is provided'
 
     # MAIN ENCODING ROUTINE
-    for k in xrange(source_len):
+    for k in range(source_len):
         hl_diff = hi - lo + 1     # range of the interval (+1 to avoid rounding issues)
         key = ''.join(source_list[max(0,k-key_len):k])
         if dynamic:
