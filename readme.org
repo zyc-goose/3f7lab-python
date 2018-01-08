@@ -1,0 +1,14 @@
+* 3F7 Lab 2017 - reimplemented in Python
+
+** Introduction
+
+This the python reimplementation of the original 3F7 lab MATLAB
+code(only for the arithmetic encoding/decoding). The code supports
+both static encoding/decoding and dynamic(adaptibe) encoding/decoding
+schemes.
+
+To use the code, just run:
+
+#+BEGIN_SRC sh
+  python test.py
+#+END_SRC

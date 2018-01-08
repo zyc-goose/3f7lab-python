@@ -1,7 +1,7 @@
 from arithmetic import *
 import sys, time
 
-key_len = 5
+key_len = 0
 source_name = 'hamlet.txt'
 uppercase_mode = True;
 dynamic = False
